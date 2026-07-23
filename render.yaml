@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: trustpatch-backend
+    env: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8000

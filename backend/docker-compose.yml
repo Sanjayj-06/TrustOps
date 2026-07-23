@@ -1,0 +1,67 @@
+# ============================================================
+# TrustPatch Docker Compose Configuration
+# ============================================================
+# Runs the TrustPatch backend in a Docker container.
+#
+# Services:
+#   trustpatch-backend:
+#     - FastAPI + Uvicorn on port 8000
+#     - SQLite database persisted to ./data/ via volume mount
+#     - Auto-restarts on failure (restart: unless-stopped)
+#     - Health check monitors /health endpoint
+#
+# Usage:
+#   docker-compose up --build          # Build and start
+#   docker-compose up -d               # Start in background (detached)
+#   docker-compose logs -f             # Follow logs
+#   docker-compose down                # Stop and remove containers
+#   docker-compose down -v             # Stop and remove volumes (wipes DB)
+# ============================================================
+
+version: '3.8'
+
+services:
+  trustpatch-backend:
+    # Build from the Dockerfile in the current directory
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    # Container name for easy reference in logs and exec
+    container_name: trustpatch-backend
+
+    # Map container port 8000 to host port 8000
+    # Frontend dev server on host:5173 → API on host:8000 → container:8000
+    ports:
+      - "8000:8000"
+
+    # Mount local ./data directory for SQLite DB persistence
+    # This ensures the database survives container restarts
+    volumes:
+      - ./data:/app/data
+
+    # Environment variables passed into the container
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      # Database URL uses the mounted volume path
+      - DATABASE_URL=sqlite:////app/data/trustpatch.db
+
+    # Restart policy: restart automatically unless explicitly stopped
+    restart: unless-stopped
+
+    # Health check: verify the API is responding every 30 seconds
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # Logging configuration: limit log file size for disk management
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

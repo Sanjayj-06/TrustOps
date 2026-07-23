@@ -14,6 +14,7 @@ Endpoints:
 """
 
 import time
+import json
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -143,6 +144,7 @@ async def evaluate(request: EvaluateRequest, db: Session = Depends(get_db)):
             existing.baseline_score    = ep["baseline_score"]
             existing.selected          = is_tapr_sel
             existing.baseline_selected = is_bapr_sel
+            existing.raw_metrics_json  = json.dumps(ep.get("raw_metrics", {}))
             patch_db_id = existing.id
         else:
             db_patch = models.GeneratedPatch(
@@ -153,6 +155,7 @@ async def evaluate(request: EvaluateRequest, db: Session = Depends(get_db)):
                 baseline_score    = ep["baseline_score"],
                 selected          = is_tapr_sel,
                 baseline_selected = is_bapr_sel,
+                raw_metrics_json  = json.dumps(ep.get("raw_metrics", {})),
             )
             db.add(db_patch)
             db.flush()

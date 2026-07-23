@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 from app.database import engine, Base, get_db
 from app.models import VisitorCount
 from app.routers import upload, baseline, trustpatch, history
+from app.routers import explanation, decision, knowledge, runtime, adaptation, analytics
 
 # ---------------------------------------------------------------------------
 # Create all DB tables on startup (idempotent — won't recreate if exists)
@@ -33,14 +34,16 @@ Base.metadata.create_all(bind=engine)
 # FastAPI App Instance
 # ---------------------------------------------------------------------------
 app = FastAPI(
-    title="TrustPatch API",
+    title="TrustOps API",
     description=(
-        "Trust-Aware and Explainable Self-Healing Framework for Reliable Software Systems. "
+        "TrustOps — Lifecycle-Oriented Trust Management Framework for AI-Assisted Software Repair. "
+        "Extends TrustPatch with Trust Explanation (Module 3), Human-in-the-Loop Decision (Module 4), "
+        "and Trust Knowledge Base (Module 5). "
         "Compares Baseline APR (BAPR) with Trust-Aware APR (TAPR) across 10 trust dimensions."
     ),
-    version="1.0.0",
-    docs_url="/docs",          # Swagger UI
-    redoc_url="/redoc",        # ReDoc UI
+    version="2.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
 # ---------------------------------------------------------------------------
@@ -64,6 +67,24 @@ app.include_router(upload.router)      # POST /upload
 app.include_router(baseline.router)    # POST /baseline/run
 app.include_router(trustpatch.router)  # POST /trustpatch/evaluate
 app.include_router(history.router)     # GET  /history
+
+# ---------------------------------------------------------------------------
+# TrustOps Phase 1 Routers
+# ---------------------------------------------------------------------------
+app.include_router(explanation.router) # GET  /trustops/explanation/{session_id}
+app.include_router(decision.router)    # POST /trustops/decision/submit
+app.include_router(knowledge.router)   # GET  /trustops/knowledge/summary
+
+# ---------------------------------------------------------------------------
+# TrustOps Phase 2 Routers (Runtime Monitoring)
+# ---------------------------------------------------------------------------
+app.include_router(runtime.router)     # /trustops/runtime/*
+
+# ---------------------------------------------------------------------------
+# TrustOps Phase 3 Routers (Adaptation & Analytics)
+# ---------------------------------------------------------------------------
+app.include_router(adaptation.router)  # /trustops/adaptation/*
+app.include_router(analytics.router)   # /trustops/analytics/*
 
 # ---------------------------------------------------------------------------
 # Visitor Counter Endpoint
@@ -101,14 +122,21 @@ async def health_check():
     """
     return {
         "status": "healthy",
-        "service": "TrustPatch API",
-        "version": "1.0.0",
+        "service": "TrustOps API",
+        "version": "2.0.0",
         "endpoints": [
             "POST /upload",
             "POST /baseline/run",
             "POST /trustpatch/evaluate",
             "GET  /history",
             "GET  /history/{session_id}",
+            "GET  /trustops/explanation/{session_id}",
+            "GET  /trustops/explanation/{session_id}/{patch_id}",
+            "POST /trustops/decision/submit",
+            "GET  /trustops/decision/{session_id}",
+            "GET  /trustops/knowledge/summary",
+            "GET  /trustops/knowledge/entries",
+            "GET  /trustops/knowledge/entries/{entry_id}",
             "GET  /docs",
         ]
     }

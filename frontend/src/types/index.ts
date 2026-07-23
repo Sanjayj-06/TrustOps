@@ -262,3 +262,104 @@ export interface AppState {
   evaluation: EvaluationResponse | null;
   error: string | null;
 }
+
+// ============================================================
+// TrustOps Phase 1 — Explanation Engine Types
+// ============================================================
+
+export interface ParameterExplanation {
+  param:            string;  // "T", "S", "C", ...
+  label:            string;  // "Test Pass Rate"
+  raw_score:        number;  // Raw unnormalized score
+  normalized_score: number;  // [0, 1]
+  weight:           number;  // Expert weight
+  contribution:     number;  // normalized_score × weight
+  status:           'strong' | 'moderate' | 'weak';
+  short_reason:     string;
+  example:          string;  // Example or evidence
+}
+
+export interface PatchOverallExplanation {
+  summary:         string;
+  confidence:      'High' | 'Medium' | 'Low';
+  recommendation:  'Accept' | 'Review' | 'Reject';
+  risk_level:      'Low' | 'Medium' | 'High';
+  key_reasons:     string[];
+  key_strengths:   string[];
+  potential_risks: string[];
+}
+
+export interface PatchExplanation {
+  patch_id:    string;
+  trust_score: number;
+  rank:        number;
+  overall:     PatchOverallExplanation;
+  parameters:  ParameterExplanation[];
+}
+
+export interface SessionExplanationResponse {
+  session_id:        string;
+  bug_filename:      string;
+  selected_patch_id: string;
+  baseline_patch_id: string;
+  patches:           PatchExplanation[];
+}
+
+// ============================================================
+// TrustOps Phase 1 — Human-in-the-Loop Decision Types
+// ============================================================
+
+export type DecisionType = 'accept' | 'reject' | 'override';
+
+export const DECISION_REASONS = [
+  'Logic Incorrect',
+  'Performance Issue',
+  'Security Concern',
+  'Readability',
+  'Maintainability',
+  'Other',
+] as const;
+
+export type DecisionReason = typeof DECISION_REASONS[number];
+
+export interface DecisionRequest {
+  session_id:        string;
+  patch_id:          string;
+  agreement:         string;
+  decision:          DecisionType;
+  override_patch_id?: string;
+  reason?:           string;
+  comment?:          string;
+}
+
+export interface DecisionResponse {
+  success:                 boolean;
+  decision_id:             number;
+  knowledge_base_entry_id: number | null;
+  message:                 string;
+}
+
+export interface HumanDecision {
+  session_id:        string;
+  patch_id:          string;
+  agreement:         string;
+  decision:          DecisionType;
+  override_patch_id?: string;
+  reason?:           string;
+  comment?:          string;
+  timestamp?:        string;
+}
+
+// ============================================================
+// TrustOps Phase 1 — Knowledge Base Types
+// ============================================================
+
+export interface KnowledgeSummary {
+  total_entries:                number;
+  decisions:                    Record<string, number>;
+  most_common_rejection_reason: string | null;
+  avg_trust_score_accepted:     number | null;
+  avg_trust_score_rejected:     number | null;
+  avg_trust_score_overridden:   number | null;
+  recent_entries:               any[]; // Could be typed strictly if needed
+}

@@ -9,7 +9,14 @@
  */
 
 import axios from 'axios';
-import type { UploadResponse, EvaluationResponse } from '../types';
+import type {
+  UploadResponse,
+  EvaluationResponse,
+  SessionExplanationResponse,
+  DecisionRequest,
+  DecisionResponse,
+  KnowledgeSummary,
+} from '../types';
 
 // Base URL for the FastAPI backend
 // Forcefully hardcode the live Render backend for production to bypass any incorrect Vercel settings
@@ -91,6 +98,75 @@ export async function checkHealth(): Promise<boolean> {
 export async function getVisitorCount(): Promise<number> {
   const response = await api.get('/visitors');
   return response.data.visitors;
+}
+
+// =============================================================
+// TrustOps Phase 1 API Functions
+// =============================================================
+
+/**
+ * Get structured trust explanations for all patches in a session.
+ * Calls GET /trustops/explanation/{session_id}
+ */
+export async function getSessionExplanation(
+  sessionId: string
+): Promise<SessionExplanationResponse> {
+  const response = await api.get<SessionExplanationResponse>(
+    `/trustops/explanation/${sessionId}`
+  );
+  return response.data;
+}
+
+/**
+ * Submit a human decision (Accept / Reject / Override) for a patch.
+ * Calls POST /trustops/decision/submit
+ */
+export const submitDecision = async (request: DecisionRequest): Promise<DecisionResponse> => {
+  const resp = await api.post('/trustops/decision/submit', request);
+  return resp.data;
+};
+
+// ----------------------------------------------------
+// PHASE 2: RUNTIME MONITORING ENDPOINTS
+// ----------------------------------------------------
+
+export const startRuntimeSession = async (sessionId: string, patchId: string) => {
+  const resp = await api.post('/trustops/runtime/start', {
+    session_id: sessionId,
+    patch_id: patchId,
+  });
+  return resp.data;
+};
+
+export const simulateRuntimeTick = async (sessionId: string) => {
+  const resp = await api.post('/trustops/runtime/simulate', {
+    session_id: sessionId,
+  });
+  return resp.data;
+};
+
+export const getRuntimeMetrics = async (sessionId: string) => {
+  const resp = await api.get(`/trustops/runtime/${sessionId}`);
+  return resp.data;
+};
+
+export const getRuntimeHistory = async (sessionId: string) => {
+  const resp = await api.get(`/trustops/runtime/history/${sessionId}`);
+  return resp.data;
+};
+
+export const getRuntimeHealth = async (sessionId: string) => {
+  const resp = await api.get(`/trustops/runtime/health/${sessionId}`);
+  return resp.data;
+};
+
+/**
+ * Retrieve aggregate statistics from the Trust Knowledge Base.
+ * Calls GET /trustops/knowledge/summary
+ */
+export async function getKnowledgeSummary(): Promise<KnowledgeSummary> {
+  const response = await api.get<KnowledgeSummary>('/trustops/knowledge/summary');
+  return response.data;
 }
 
 export default api;

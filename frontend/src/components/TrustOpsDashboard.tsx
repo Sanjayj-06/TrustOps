@@ -160,11 +160,13 @@ export default function TrustOpsDashboard({
         <TrustScoreCenter
           patchExplanation = {selectedExplanation}
           totalPatches     = {patches.length}
+          selectedPatch    = {selectedPatch ?? null}
         />
 
         {/* RIGHT — Explanation Panel */}
         <ExplanationPanel
           patchExplanation = {selectedExplanation}
+          selectedPatch    = {selectedPatch ?? null}
         />
       </div>
 

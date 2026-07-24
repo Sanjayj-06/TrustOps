@@ -245,7 +245,12 @@ export default function HumanReviewPanel({
             </div>
             {error && (
               <div className="mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
-                {error}
+                <p className="font-semibold">{error}</p>
+                {(error.includes('Not Found') || error.includes('404') || error.includes('Network Error')) && (
+                  <p className="text-xs text-red-500 mt-1">
+                    The backend may be running a stale image. Try: <code className="bg-red-100 px-1 rounded">docker compose up --build -d</code>
+                  </p>
+                )}
               </div>
             )}
           </div>

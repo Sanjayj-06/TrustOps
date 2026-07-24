@@ -1,16 +1,34 @@
 import React, { useState, useEffect } from "react";
-import { Activity, ShieldCheck, Cpu, MemoryStick, Clock, Bug, CheckCircle, AlertTriangle, Play, RefreshCw, XCircle } from "lucide-react";
-import { getRuntimeMetrics, getRuntimeHistory, getRuntimeHealth, simulateRuntimeTick } from "../api/trustpatch";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { Activity, ShieldCheck, Cpu, MemoryStick, Clock, Bug, CheckCircle, AlertTriangle, Play, RefreshCw, XCircle, FileSearch } from "lucide-react";
+import { getRuntimeMetrics, getRuntimeHistory, getRuntimeHealth, simulateRuntimeTick, startRuntimeSession } from "../api/trustpatch";
 import { format } from "date-fns";
 
-const DEMO_SESSION_ID = "DEMO-SESSION-12345"; // For demo purposes until integrated
-
 export default function RuntimeMonitorPage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  
+  const sessionId = searchParams.get("session_id");
+  const patchId = searchParams.get("patch_id");
+
   const [metrics, setMetrics] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [health, setHealth] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [isMonitoring, setIsMonitoring] = useState(false);
+  const [sessionStarted, setSessionStarted] = useState(false);
+
+  // Initialize runtime session in the backend if not already done
+  useEffect(() => {
+    if (sessionId && patchId && !sessionStarted) {
+      startRuntimeSession(sessionId, patchId)
+        .then(() => {
+          setSessionStarted(true);
+          setIsMonitoring(true); // Auto-start polling
+        })
+        .catch(console.error);
+    }
+  }, [sessionId, patchId, sessionStarted]);
 
   // Poll for updates
   useEffect(() => {
@@ -22,24 +40,24 @@ export default function RuntimeMonitorPage() {
   }, [isMonitoring]);
 
   const fetchRuntimeData = async () => {
+    if (!sessionId) return;
     try {
-      // In a real flow, we'd use the selected session ID.
-      // Here we assume the backend has something or we handle 404s gracefully
-      const m = await getRuntimeMetrics(DEMO_SESSION_ID);
-      const h = await getRuntimeHistory(DEMO_SESSION_ID);
-      const hl = await getRuntimeHealth(DEMO_SESSION_ID);
+      const m = await getRuntimeMetrics(sessionId);
+      const h = await getRuntimeHistory(sessionId);
+      const hl = await getRuntimeHealth(sessionId);
       setMetrics(m);
       setHistory(h.events || []);
       setHealth(hl);
     } catch (e) {
-      console.warn("No runtime data yet. Start simulation.");
+      console.warn("No runtime data yet.");
     }
   };
 
   const handleSimulateTick = async () => {
+    if (!sessionId) return;
     setLoading(true);
     try {
-      await simulateRuntimeTick(DEMO_SESSION_ID);
+      await simulateRuntimeTick(sessionId);
       await fetchRuntimeData();
     } catch (e) {
       console.error(e);
@@ -49,13 +67,35 @@ export default function RuntimeMonitorPage() {
     }
   };
 
+  if (!sessionId) {
+    return (
+      <div className="p-10 max-w-4xl mx-auto text-center mt-20 animate-fade-in">
+        <Activity className="w-16 h-16 text-slate-300 mx-auto mb-6" />
+        <h2 className="text-2xl font-bold text-slate-800 mb-2">No Active Runtime Session</h2>
+        <p className="text-slate-500 mb-8 max-w-md mx-auto">
+          Please select a session from the Dashboard or Knowledge Base to begin monitoring.
+        </p>
+        <div className="flex justify-center gap-4">
+          <button 
+            onClick={() => navigate("/evaluation")}
+            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm flex items-center gap-2 transition-colors"
+          >
+            <FileSearch className="w-4 h-4" /> Go to Evaluation
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Runtime Monitor</h1>
-          <p className="text-slate-500 mt-1">Continuous lifecycle observation for deployed patches.</p>
+          <p className="text-slate-500 mt-1">
+            Monitoring Patch <span className="font-bold text-slate-700">{patchId}</span> for Session <span className="font-mono text-xs">{sessionId.split('-')[0]}...</span>
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <button 

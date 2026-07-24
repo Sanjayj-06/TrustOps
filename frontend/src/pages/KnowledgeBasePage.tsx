@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Database, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Database, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Loader2, Activity } from 'lucide-react';
 import { getKnowledgeSummary, getKnowledgeEntries } from '../api/trustpatch';
 import type { KnowledgeSummary, KnowledgeBaseEntry } from '../types';
 
 export default function KnowledgeBasePage() {
+  const navigate = useNavigate();
   const [summary, setSummary] = useState<KnowledgeSummary | null>(null);
   const [entries, setEntries] = useState<KnowledgeBaseEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -188,6 +190,21 @@ export default function KnowledgeBasePage() {
                                       ))}
                                     </div>
                                   </div>
+                                  
+                                  {(entry.decision === "accept" || entry.decision === "override") && (
+                                    <div className="mt-2 flex justify-end">
+                                      <button 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          navigate(`/runtime?session_id=${entry.session_id}&patch_id=${entry.patch_id}`);
+                                        }}
+                                        className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-bold shadow-md flex items-center gap-2 transition-colors"
+                                      >
+                                        <Activity className="w-4 h-4" />
+                                        Monitor in Runtime
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               </td>
                             </tr>

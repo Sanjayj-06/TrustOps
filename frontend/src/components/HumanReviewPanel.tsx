@@ -19,6 +19,8 @@
  */
 
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Activity } from "lucide-react";
 import DecisionModal from "./DecisionModal";
 import { submitDecision } from "../api/trustpatch";
 import type { DecisionResponse, HumanDecision } from "../types";
@@ -40,6 +42,7 @@ export default function HumanReviewPanel({
   allPatchIds,
   trustScore,
 }: HumanReviewPanelProps) {
+  const navigate = useNavigate();
   const [agreement, setAgreement]       = useState<string | null>(null);
   const [modalOpen, setModalOpen]       = useState<ModalType>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -148,7 +151,17 @@ export default function HumanReviewPanel({
           {kbEntryId && (
             <div className="text-right flex-shrink-0">
               <div className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Knowledge Base</div>
-              <div className="text-slate-700 font-bold text-sm mt-0.5">Entry #{kbEntryId} saved</div>
+              <div className="text-slate-700 font-bold text-sm mt-0.5 mb-3">Entry #{kbEntryId} saved</div>
+              
+              {(submitted.decision === "accept" || submitted.decision === "override") && (
+                <button 
+                  onClick={() => navigate(`/runtime?session_id=${sessionId}&patch_id=${submitted.decision === "override" ? submitted.override_patch_id : submitted.patch_id}`)}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-bold shadow-md flex items-center gap-2 transition-colors ml-auto"
+                >
+                  <Activity className="w-4 h-4" />
+                  Deploy & Monitor
+                </button>
+              )}
             </div>
           )}
         </div>

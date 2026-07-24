@@ -4,6 +4,7 @@ import PatchEvaluationPage from "./pages/PatchEvaluationPage";
 import RuntimeMonitorPage from "./pages/RuntimeMonitorPage";
 import AdaptationDashboard from "./pages/AdaptationDashboard";
 import ExperimentDashboard from "./pages/ExperimentDashboard";
+import KnowledgeBasePage from "./pages/KnowledgeBasePage";
 import { 
     LayoutDashboard, 
     FileSearch, 
@@ -108,7 +109,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<div className="p-10"><h2 className="text-2xl font-bold">Dashboard</h2><p className="text-slate-500 mt-2">Welcome to TrustOps. Please navigate to Patch Evaluation or Runtime Monitor.</p></div>} />
           <Route path="/evaluation" element={<PatchEvaluationPage />} />
-          <Route path="/knowledge" element={<div className="p-10"><h2 className="text-2xl font-bold">Knowledge Base</h2><p className="text-slate-500 mt-2">Historical evaluations and snapshots.</p></div>} />
+          <Route path="/knowledge" element={<KnowledgeBasePage />} />
           <Route path="/runtime" element={<RuntimeMonitorPage />} />
           <Route path="/adaptation" element={<AdaptationDashboard />} />
           <Route path="/experiments" element={<ExperimentDashboard />} />

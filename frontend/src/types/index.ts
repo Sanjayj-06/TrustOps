@@ -363,3 +363,23 @@ export interface KnowledgeSummary {
   avg_trust_score_overridden:   number | null;
   recent_entries:               any[]; // Could be typed strictly if needed
 }
+
+export interface KnowledgeBaseEntry {
+  id: number;
+  session_id: string;
+  bug_filename: string;
+  patch_id: string;
+  trust_score: number;
+  decision: "accept" | "reject" | "override";
+  reason: string | null;
+  timestamp: string;
+  metrics: {
+    T: number; S: number; C: number; H: number; A: number;
+    B: number; R: number; X: number; L: number; M: number;
+  };
+}
+
+export interface KnowledgeBaseListResponse {
+  total: number;
+  entries: KnowledgeBaseEntry[];
+}

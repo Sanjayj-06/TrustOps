@@ -16,6 +16,8 @@ import type {
   DecisionRequest,
   DecisionResponse,
   KnowledgeSummary,
+  KnowledgeBaseListResponse,
+  KnowledgeBaseEntry,
 } from '../types';
 
 // Base URL for the FastAPI backend
@@ -166,6 +168,16 @@ export const getRuntimeHealth = async (sessionId: string) => {
  */
 export async function getKnowledgeSummary(): Promise<KnowledgeSummary> {
   const response = await api.get<KnowledgeSummary>('/trustops/knowledge/summary');
+  return response.data;
+}
+
+export async function getKnowledgeEntries(limit = 50): Promise<KnowledgeBaseListResponse> {
+  const response = await api.get<KnowledgeBaseListResponse>(`/trustops/knowledge/entries?limit=${limit}`);
+  return response.data;
+}
+
+export async function getKnowledgeEntry(entryId: number): Promise<KnowledgeBaseEntry & { explanation: any; weights: any }> {
+  const response = await api.get<KnowledgeBaseEntry & { explanation: any; weights: any }>(`/trustops/knowledge/entries/${entryId}`);
   return response.data;
 }
 

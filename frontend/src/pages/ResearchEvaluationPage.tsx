@@ -408,7 +408,8 @@ function ConfigurationTab({ onConfigCreated }: { onConfigCreated: (id: string) =
     evaluation_mode: "full",
     developer_mode: "ai",
   });
-  const [apiKey, setApiKey] = useState("");
+  const [apiKey, setApiKey] = useState(import.meta.env.VITE_LLM_API_KEY || "sk-default-key-from-env-1234567890");
+  const [apiKeyConfirmed, setApiKeyConfirmed] = useState(false);
   const [judgeModels, setJudgeModels] = useState<JudgeModel[]>([]);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
@@ -535,15 +536,26 @@ function ConfigurationTab({ onConfigCreated }: { onConfigCreated: (id: string) =
               ))}
             </div>
             {selectedJudge?.requires_api_key && (
-              <div className="mt-3">
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={e => setApiKey(e.target.value)}
-                  placeholder={`Enter ${selectedJudge.provider} API Key`}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet-400"
-                />
-                <p className="text-xs text-slate-400 mt-1.5">Key used only for this session. Falls back to Synthetic Judge if unavailable.</p>
+              <div className="mt-3 bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                <label className="block text-sm font-bold text-slate-700 mb-2">API Key Confirmation (Human in the loop)</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={e => setApiKey(e.target.value)}
+                    disabled={apiKeyConfirmed}
+                    placeholder={`Enter ${selectedJudge.provider} API Key`}
+                    className={`flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet-400 ${apiKeyConfirmed ? "bg-slate-100 text-slate-500" : "bg-white"}`}
+                  />
+                  <button
+                    onClick={() => setApiKeyConfirmed(!apiKeyConfirmed)}
+                    className={`px-4 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${apiKeyConfirmed ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" : "bg-violet-600 text-white hover:bg-violet-700"}`}
+                  >
+                    {apiKeyConfirmed ? <CheckCircle2 className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+                    {apiKeyConfirmed ? "Confirmed" : "Confirm Key"}
+                  </button>
+                </div>
+                <p className="text-xs text-slate-400 mt-2">API key is auto-filled from environment for human-in-the-loop review.</p>
               </div>
             )}
           </div>
@@ -1076,6 +1088,49 @@ function MetricsTab({ experimentId, onGoDashboard }: { experimentId: string | nu
           </div>
         </div>
       ))}
+
+      {m && (
+        <div className="bg-white border border-slate-200 rounded-xl p-6 mt-6">
+          <div className="flex items-center gap-3 mb-4">
+            <BookOpen className="w-5 h-5 text-indigo-600" />
+            <h3 className="text-lg font-black text-slate-800">Metrics Calculation Reference</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-600">
+            <div>
+              <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-1"><Target className="w-4 h-4 text-blue-500"/> Patch Metrics</h4>
+              <ul className="space-y-2 list-disc pl-5">
+                <li><strong className="text-slate-800">Top-1 / Top-3 Accuracy:</strong> % of bugs where a correct patch is in the top 1 or top 3 ranked suggestions.</li>
+                <li><strong className="text-slate-800">MRR (Mean Reciprocal Rank):</strong> Average of 1/rank for the first correct patch across all bugs.</li>
+                <li><strong className="text-slate-800">Acceptance Rate:</strong> % of patches accepted automatically by the judge or human.</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-1"><Shield className="w-4 h-4 text-violet-500"/> Trust & Developer Metrics</h4>
+              <ul className="space-y-2 list-disc pl-5">
+                <li><strong className="text-slate-800">Trust Score (0-1):</strong> Weighted composite of historical success, component stability, and code coverage.</li>
+                <li><strong className="text-slate-800">Dev Agreement Rate:</strong> % of times the human developer agreed with the AI Judge's decision.</li>
+                <li><strong className="text-slate-800">Decision Time:</strong> Average seconds taken to accept/reject a patch during manual review.</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-1"><Cpu className="w-4 h-4 text-emerald-500"/> Runtime & Efficiency</h4>
+              <ul className="space-y-2 list-disc pl-5">
+                <li><strong className="text-slate-800">Avg Repair Iterations:</strong> Average number of LLM reprompts needed to generate a valid patch.</li>
+                <li><strong className="text-slate-800">MTTD (Mean Time to Detection):</strong> Average time to detect runtime failures for applied patches.</li>
+                <li><strong className="text-slate-800">Token Counts:</strong> Total LLM tokens used during the patch generation and evaluation phases.</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-1"><Leaf className="w-4 h-4 text-teal-500"/> Sustainability Metrics</h4>
+              <ul className="space-y-2 list-disc pl-5">
+                <li><strong className="text-slate-800">Energy (kWh):</strong> Estimated energy consumption of LLM API calls based on token count and GPU thermal design power.</li>
+                <li><strong className="text-slate-800">Carbon (gCO₂):</strong> Derived from energy consumption using standard global grid emission factors.</li>
+                <li><strong className="text-slate-800">CO₂ Reduction:</strong> % decrease in carbon footprint compared to baseline models.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
 
       {m && onGoDashboard && (
         <div className="flex justify-end pt-4">

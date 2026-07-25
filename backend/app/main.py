@@ -24,6 +24,8 @@ from app.database import engine, Base, get_db
 from app.models import VisitorCount
 from app.routers import upload, baseline, trustpatch, history
 from app.routers import explanation, decision, knowledge, runtime, adaptation, analytics
+from app.routers import research         # Phase 4 — Research Evaluation Framework
+import app.models_research               # Phase 4 — ensure tables are created
 
 # ---------------------------------------------------------------------------
 # Create all DB tables on startup (idempotent — won't recreate if exists)
@@ -85,6 +87,11 @@ app.include_router(runtime.router)     # /trustops/runtime/*
 # ---------------------------------------------------------------------------
 app.include_router(adaptation.router)  # /trustops/adaptation/*
 app.include_router(analytics.router)   # /trustops/analytics/*
+
+# ---------------------------------------------------------------------------
+# TrustOps Phase 4 Routers (Research Evaluation Framework)
+# ---------------------------------------------------------------------------
+app.include_router(research.router)    # /research/*
 
 # ---------------------------------------------------------------------------
 # Visitor Counter Endpoint

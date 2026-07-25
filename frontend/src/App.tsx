@@ -5,12 +5,14 @@ import RuntimeMonitorPage from "./pages/RuntimeMonitorPage";
 import AdaptationDashboard from "./pages/AdaptationDashboard";
 import ExperimentDashboard from "./pages/ExperimentDashboard";
 import KnowledgeBasePage from "./pages/KnowledgeBasePage";
+import ResearchEvaluationPage from "./pages/ResearchEvaluationPage";
 import { 
     LayoutDashboard, 
     FileSearch, 
     Database, 
     ActivitySquare, 
     FlaskConical,
+    Microscope,
     Menu,
     X
 } from "lucide-react";
@@ -22,6 +24,7 @@ const NAV_LINKS = [
   { path: "/knowledge", label: "Knowledge Base", icon: Database },
   { path: "/runtime", label: "Runtime Monitor", icon: ActivitySquare },
   { path: "/experiments", label: "Experiments", icon: FlaskConical },
+  { path: "/research", label: "Research Evaluation", icon: Microscope },
 ];
 
 export default function App() {
@@ -30,7 +33,7 @@ export default function App() {
   const [researchMode, setResearchMode] = useState(false);
 
   const visibleLinks = NAV_LINKS.filter(link => 
-    researchMode ? true : !["/adaptation", "/experiments"].includes(link.path)
+    researchMode ? true : !["/adaptation", "/experiments", "/research"].includes(link.path)
   );
 
   return (
@@ -113,6 +116,7 @@ export default function App() {
           <Route path="/runtime" element={<RuntimeMonitorPage />} />
           <Route path="/adaptation" element={<AdaptationDashboard />} />
           <Route path="/experiments" element={<ExperimentDashboard />} />
+          <Route path="/research" element={<ResearchEvaluationPage />} />
         </Routes>
       </main>
     </div>

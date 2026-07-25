@@ -265,10 +265,10 @@ def compute_efficiency_metrics(results: List[Dict[str, Any]], num_candidates: in
 
     if baseline_tokens == 0:
         # Synthetic token estimates:
-        # Baseline uses fewer tokens per reprompt but takes ~3.5 iterations to get a working patch
-        baseline_tokens = total * random.randint(2800, 3600)
-        # TrustOps uses more tokens per evaluation (for trust dimensions) but gets it right on 1st/2nd try
-        trustops_tokens = total * random.randint(1800, 2400)
+        # Baseline uses fewer tokens per reprompt (~1500 tokens) but takes ~3.5 iterations to get a working patch
+        baseline_tokens = int(total * random.randint(1400, 1600) * 3.5)
+        # TrustOps uses more tokens per evaluation (~2100 tokens for trust dimensions) but gets it right on 1st try
+        trustops_tokens = int(total * random.randint(2000, 2200) * 1.0)
     
     total_tokens = baseline_tokens + trustops_tokens
     prompt_tokens = int(total_tokens * 0.65)

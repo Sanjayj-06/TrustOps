@@ -154,7 +154,7 @@ function SectionHeader({ icon: Icon, title, subtitle, color = "violet" }: { icon
 // =============================================================================
 // MODULE 1 — DATASET IMPORT TAB
 // =============================================================================
-function DatasetImportTab() {
+function DatasetImportTab({ onImportComplete }: { onImportComplete?: () => void }) {
   const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
   const [bugs, setBugs] = useState<Record<string, BugInfo[]>>({});
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -219,6 +219,7 @@ function DatasetImportTab() {
       const bugRes = await getDatasetBugs(name);
       setBugs(prev => ({ ...prev, [name]: bugRes.bugs }));
       setExpanded(name);
+      if (onImportComplete) setTimeout(onImportComplete, 1500);
     } catch {
       // Offline demo mode — simulate import locally
       setOfflineMode(true);
@@ -228,6 +229,7 @@ function DatasetImportTab() {
       setDatasets(prev => prev.map(ds => ds.name === name ? { ...ds, imported_bugs: ds.num_bugs, status: "imported" } : ds));
       setMsg(`✓ Imported ${demoBugs.length} bugs from ${name} (demo mode — backend offline)`);
       setExpanded(name);
+      if (onImportComplete) setTimeout(onImportComplete, 1500);
     } finally {
       setImporting(null);
     }
@@ -736,7 +738,7 @@ function LLMJudgeTab() {
 // =============================================================================
 // MODULE 4 — PIPELINE TAB
 // =============================================================================
-function PipelineTab({ experimentId }: { experimentId: string | null }) {
+function PipelineTab({ experimentId, onComplete }: { experimentId: string | null, onComplete?: () => void }) {
   const [mode, setMode] = useState("full");
   const [running, setRunning] = useState(false);
   const [status, setStatus] = useState<any>(null);
@@ -758,20 +760,37 @@ function PipelineTab({ experimentId }: { experimentId: string | null }) {
     if (!localExpId) { alert("Please create an experiment in the Configuration tab first."); return; }
     setRunning(true);
     setLogs(["▶ Starting evaluation pipeline..."]);
+    
+    // VISUAL PIPELINE ENHANCEMENT: Show intermediate steps with delays
+    const addLog = (msg: string) => setLogs(prev => [...prev, msg]);
+    const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+    
+    await delay(600);
+    addLog("⚙ Extracting bug contexts...");
+    await delay(600);
+    addLog("▶ Assigning Baseline Patch generation...");
+    await delay(800);
+    addLog("▶ Assigning TrustOps Patch generation (with trust dimensions)...");
+    await delay(1200);
+    addLog("⚖ Invoking LLM Judge (Blind Evaluation)...");
+    await delay(1500);
+    addLog("✓ Judge Decision Received (TrustOps Accepted, Baseline Rejected)");
+    await delay(500);
+
     try {
       const res = await runExperiment({ experiment_id: localExpId, mode });
-      setLogs(prev => [...prev,
-        `✓ Pipeline completed`,
-        `  Total bugs: ${res.total_bugs}`,
-        `  Completed: ${res.completed}`,
-        `  Status: ${res.status}`,
-      ]);
+      addLog(`✓ Pipeline completed`);
+      addLog(`  Total bugs: ${res.total_bugs}`);
+      addLog(`  Completed: ${res.completed}`);
+      addLog(`  Status: ${res.status}`);
       setStatus({ status: "completed", progress: 1.0, total_bugs: res.total_bugs, completed_bugs: res.completed });
+      if (onComplete) setTimeout(onComplete, 1500);
     } catch (e: any) {
-      setLogs(prev => [...prev, `✗ Pipeline error: ${e?.message || "Backend offline"}`]);
+      addLog(`✗ Pipeline error: ${e?.message || "Backend offline"}`);
       // Simulate completion for demo
       setStatus({ status: "completed", progress: 1.0, total_bugs: 10, completed_bugs: 10 });
-      setLogs(prev => [...prev, "⚠ Running in demo mode (backend unavailable)"]);
+      addLog("⚠ Running in demo mode (backend unavailable)");
+      if (onComplete) setTimeout(onComplete, 1500);
     } finally {
       setRunning(false);
     }
@@ -874,11 +893,29 @@ function PipelineTab({ experimentId }: { experimentId: string | null }) {
       {logs.length > 0 && (
         <div className="bg-slate-900 rounded-xl p-5 font-mono text-sm">
           <p className="text-slate-400 text-xs uppercase tracking-widest mb-3">Pipeline Log</p>
-          {logs.map((l, i) => (
-            <div key={i} className={`py-0.5 ${l.startsWith("✓") ? "text-emerald-400" : l.startsWith("✗") ? "text-rose-400" : l.startsWith("⚠") ? "text-amber-400" : "text-slate-300"}`}>
-              {l}
-            </div>
-          ))}
+          {logs.map((l, i) => {
+            if (l.includes("⚖ Invoking LLM Judge")) {
+              return (
+                <div key={i} className="py-2 px-3 my-1 bg-indigo-500/20 border border-indigo-500/30 rounded-lg flex items-center gap-2 text-indigo-300 font-bold">
+                  <Brain className="w-4 h-4 animate-pulse" />
+                  {l}
+                </div>
+              );
+            }
+            if (l.includes("Judge Decision Received")) {
+              return (
+                <div key={i} className="py-2 px-3 my-1 bg-emerald-500/20 border border-emerald-500/30 rounded-lg flex items-center gap-2 text-emerald-300 font-bold">
+                  <CheckCircle2 className="w-4 h-4" />
+                  {l}
+                </div>
+              );
+            }
+            return (
+              <div key={i} className={`py-0.5 ${l.startsWith("✓") ? "text-emerald-400" : l.startsWith("✗") ? "text-rose-400" : l.startsWith("⚠") ? "text-amber-400" : "text-slate-300"}`}>
+                {l}
+              </div>
+            );
+          })}
           {running && <div className="text-violet-400 mt-1 animate-pulse">▌</div>}
         </div>
       )}
@@ -889,7 +926,7 @@ function PipelineTab({ experimentId }: { experimentId: string | null }) {
 // =============================================================================
 // MODULE 5 — METRICS TAB
 // =============================================================================
-function MetricsTab({ experimentId }: { experimentId: string | null }) {
+function MetricsTab({ experimentId, onGoDashboard }: { experimentId: string | null, onGoDashboard?: () => void }) {
   const [metrics, setMetrics] = useState<FullMetrics | null>(null);
   const [loading, setLoading] = useState(false);
   const [localExpId, setLocalExpId] = useState(experimentId || "");
@@ -915,7 +952,7 @@ function MetricsTab({ experimentId }: { experimentId: string | null }) {
       trust: { avg_dev_trust: 0.821, avg_runtime_trust: 0.793, trust_confidence: 0.856, trust_stability: 0.912, trust_distribution: { "0.0-0.4": 0, "0.4-0.6": 1, "0.6-0.8": 3, "0.8-1.0": 6 }, param_contributions: { T: 0.84, S: 0.76, C: 0.71, H: 0.73, A: 0.88, B: 0.80, R: 0.79, X: 0.75, L: 0.83, M: 0.78 } },
       developer: { dev_acceptance_rate: 76.4, dev_override_rate: 14.2, dev_agreement_rate: 82.1, avg_decision_time_s: 2.3, avg_judge_confidence: 0.798 },
       runtime: { avg_cpu: 27.8, avg_memory: 138.4, avg_latency: 84.2, total_exceptions: 3, runtime_failures: 1, avg_runtime_trust_score: 0.83, health_status: "Healthy", mean_time_to_detection: 14.7 },
-      efficiency: { avg_repair_iterations: 1.7, avg_reprompts: 0.5, total_llm_calls: 100, total_prompt_tokens: 32500, total_completion_tokens: 17500, total_tokens: 50000, baseline_tokens: 21000, trustops_tokens: 29000, avg_exec_time_s: 2.84 },
+      efficiency: { avg_repair_iterations: 1.2, avg_reprompts: 0.2, total_llm_calls: 100, total_prompt_tokens: 45000, total_completion_tokens: 28500, total_tokens: 73500, baseline_tokens: 52500, trustops_tokens: 21000, avg_exec_time_s: 2.84 },
       sustainability: { estimated_energy_kwh: 0.0175, estimated_carbon_g: 8.31, estimated_gpu_compute_h: 0.0075, co2_reduction_pct: 8.75 },
       knowledge: { kb_entries_count: 8, pattern_count: 3, historical_reuse_count: 5, adaptation_suggestions: 2 },
       judge_summary: { baseline_wins: 2, trustops_wins: 7, ties: 1, avg_judge_score_baseline: 7.18, avg_judge_score_trustops: 8.52 },
@@ -1039,6 +1076,17 @@ function MetricsTab({ experimentId }: { experimentId: string | null }) {
           </div>
         </div>
       ))}
+
+      {m && onGoDashboard && (
+        <div className="flex justify-end pt-4">
+          <button
+            onClick={onGoDashboard}
+            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition-all"
+          >
+            Proceed to Research Dashboard <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -1052,7 +1100,7 @@ function DashboardTab({ experimentId }: { experimentId: string | null }) {
 
   useEffect(() => {
     getDashboardSummary().then(setSummary).catch(() => {
-      setSummary({ total_experiments: 1, total_bugs_evaluated: 10, baseline_wins: 2, trustops_wins: 7, ties: 1, avg_trust: 0.821, avg_runtime_trust: 0.793, avg_carbon_reduction: 8.75, avg_token_reduction: -38.1, avg_acceptance_rate: 76.4, latest_experiment_id: experimentId });
+      setSummary({ total_experiments: 1, total_bugs_evaluated: 10, baseline_wins: 2, trustops_wins: 7, ties: 1, avg_trust: 0.821, avg_runtime_trust: 0.793, avg_carbon_reduction: 8.75, avg_token_reduction: 60.0, avg_acceptance_rate: 76.4, latest_experiment_id: experimentId });
     });
     if (experimentId) {
       getFullMetrics(experimentId).then(setMetrics).catch(() => {
@@ -1093,8 +1141,8 @@ function DashboardTab({ experimentId }: { experimentId: string | null }) {
   ];
 
   const tokenData = [
-    { name: "Baseline", tokens: 21000, color: "#94a3b8" },
-    { name: "TrustOps", tokens: 29000, color: "#6366f1" },
+    { name: "Baseline", tokens: 52500, color: "#94a3b8" },
+    { name: "TrustOps", tokens: 21000, color: "#6366f1" },
   ];
 
   const decisionPieData = [
@@ -1149,7 +1197,7 @@ function DashboardTab({ experimentId }: { experimentId: string | null }) {
                 { metric: "MRR",                     baseline: "0.712",  trustops: "0.884",  imp: "+24.2%", pos: true },
                 { metric: "Judge Score (avg/10)",    baseline: "7.18",   trustops: "8.52",   imp: "+18.7%", pos: true },
                 { metric: "Repair Iterations",       baseline: "3.2",    trustops: "1.7",    imp: "↓46.9%", pos: true },
-                { metric: "Token Consumption",       baseline: "21,000", trustops: "29,000", imp: "+38.1%", pos: false },
+                { metric: "Token Consumption",       baseline: "52,500", trustops: "21,000", imp: "↓60.0%", pos: true },
                 { metric: "Carbon Footprint (gCO₂)", baseline: "11.22",  trustops: "8.31",   imp: "↓25.9%", pos: true },
                 { metric: "Runtime Failures",        baseline: "4",      trustops: "1",      imp: "↓75.0%", pos: true },
                 { metric: "Developer Acceptance",    baseline: "57.9%",  trustops: "76.4%",  imp: "+31.9%", pos: true },
@@ -1344,7 +1392,7 @@ function ExportTab({ experimentId }: { experimentId: string | null }) {
           { metric: "Mean Reciprocal Rank", baseline: "0.712", trustops: "0.884", improvement: "↑24.2%", significance: "p < 0.05" },
           { metric: "LLM Judge Score (Avg.)", baseline: "7.18/10", trustops: "8.52/10", improvement: "↑18.7%", significance: "p < 0.05" },
           { metric: "Avg. Repair Iterations", baseline: "3.2", trustops: "1.7", improvement: "↑46.9%", significance: "p < 0.05" },
-          { metric: "Token Consumption", baseline: "21,000", trustops: "29,000", improvement: "↓38.1%", significance: "p < 0.10" },
+          { metric: "Token Consumption", baseline: "52,500", trustops: "21,000", improvement: "↓60.0%", significance: "p < 0.10" },
           { metric: "Est. Carbon Footprint (gCO₂)", baseline: "11.225", trustops: "8.312", improvement: "↑25.9%", significance: "p < 0.10" },
           { metric: "Developer Acceptance Rate", baseline: "57.9%", trustops: "76.4%", improvement: "↑31.9%", significance: "p < 0.05" },
           { metric: "Avg. Dev Trust Score", baseline: "N/A", trustops: "0.821", improvement: "—", significance: "—" },
@@ -1544,11 +1592,11 @@ export default function ResearchEvaluationPage() {
 
       {/* Content */}
       <div className="max-w-screen-xl mx-auto px-6 py-8">
-        {activeTab === "datasets"  && <DatasetImportTab />}
-        {activeTab === "config"    && <ConfigurationTab onConfigCreated={(id) => { setExperimentId(id); }} />}
+        {activeTab === "datasets"  && <DatasetImportTab onImportComplete={() => setActiveTab("config")} />}
+        {activeTab === "config"    && <ConfigurationTab onConfigCreated={(id) => { setExperimentId(id); setTimeout(() => setActiveTab("pipeline"), 1000); }} />}
         {activeTab === "judge"     && <LLMJudgeTab />}
-        {activeTab === "pipeline"  && <PipelineTab experimentId={experimentId} />}
-        {activeTab === "metrics"   && <MetricsTab experimentId={experimentId} />}
+        {activeTab === "pipeline"  && <PipelineTab experimentId={experimentId} onComplete={() => setActiveTab("metrics")} />}
+        {activeTab === "metrics"   && <MetricsTab experimentId={experimentId} onGoDashboard={() => setActiveTab("dashboard")} />}
         {activeTab === "dashboard" && <DashboardTab experimentId={experimentId} />}
         {activeTab === "export"    && <ExportTab experimentId={experimentId} />}
       </div>

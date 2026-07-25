@@ -1098,34 +1098,82 @@ function MetricsTab({ experimentId, onGoDashboard }: { experimentId: string | nu
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-slate-600">
             <div>
               <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-1"><Target className="w-4 h-4 text-blue-500"/> Patch Metrics</h4>
-              <ul className="space-y-2 list-disc pl-5">
-                <li><strong className="text-slate-800">Top-1 / Top-3 Accuracy:</strong> % of bugs where a correct patch is in the top 1 or top 3 ranked suggestions.</li>
-                <li><strong className="text-slate-800">MRR (Mean Reciprocal Rank):</strong> Average of 1/rank for the first correct patch across all bugs.</li>
-                <li><strong className="text-slate-800">Acceptance Rate:</strong> % of patches accepted automatically by the judge or human.</li>
+              <ul className="space-y-3 list-none">
+                <li>
+                  <strong className="text-slate-800">Top-K Accuracy:</strong>
+                  <div className="font-mono text-xs bg-slate-50 p-2 rounded border border-slate-100 my-1 text-slate-500">Acc@K = (Σ [Correct in Top-K] / Total Bugs) * 100</div>
+                  % of bugs where a correct patch is in the top K ranked suggestions.
+                </li>
+                <li>
+                  <strong className="text-slate-800">MRR (Mean Reciprocal Rank):</strong>
+                  <div className="font-mono text-xs bg-slate-50 p-2 rounded border border-slate-100 my-1 text-slate-500">MRR = (1 / |Q|) * Σ (1 / rank_i)</div>
+                  Average of 1/rank for the first correct patch across all queries Q.
+                </li>
+                <li>
+                  <strong className="text-slate-800">Acceptance Rate:</strong>
+                  <div className="font-mono text-xs bg-slate-50 p-2 rounded border border-slate-100 my-1 text-slate-500">Acc_Rate = (Patches Accepted / Total Suggested) * 100</div>
+                  % of patches accepted automatically by the judge or human.
+                </li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-1"><Shield className="w-4 h-4 text-violet-500"/> Trust & Developer Metrics</h4>
-              <ul className="space-y-2 list-disc pl-5">
-                <li><strong className="text-slate-800">Trust Score (0-1):</strong> Weighted composite of historical success, component stability, and code coverage.</li>
-                <li><strong className="text-slate-800">Dev Agreement Rate:</strong> % of times the human developer agreed with the AI Judge's decision.</li>
-                <li><strong className="text-slate-800">Decision Time:</strong> Average seconds taken to accept/reject a patch during manual review.</li>
+              <ul className="space-y-3 list-none">
+                <li>
+                  <strong className="text-slate-800">Trust Score (0-1):</strong>
+                  <div className="font-mono text-xs bg-slate-50 p-2 rounded border border-slate-100 my-1 text-slate-500">T = (w1 * S_hist) + (w2 * S_stab) + (w3 * S_cov)</div>
+                  Weighted composite of historical success, component stability, and code coverage.
+                </li>
+                <li>
+                  <strong className="text-slate-800">Dev Agreement Rate:</strong>
+                  <div className="font-mono text-xs bg-slate-50 p-2 rounded border border-slate-100 my-1 text-slate-500">Agr_Rate = (Dev Matches Judge / Total Decisions) * 100</div>
+                  % of times the human developer agreed with the AI Judge's decision.
+                </li>
+                <li>
+                  <strong className="text-slate-800">Avg Decision Time:</strong>
+                  <div className="font-mono text-xs bg-slate-50 p-2 rounded border border-slate-100 my-1 text-slate-500">T_avg = (Σ Time per Decision) / Total Decisions</div>
+                  Average seconds taken to accept/reject a patch during manual review.
+                </li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-1"><Cpu className="w-4 h-4 text-emerald-500"/> Runtime & Efficiency</h4>
-              <ul className="space-y-2 list-disc pl-5">
-                <li><strong className="text-slate-800">Avg Repair Iterations:</strong> Average number of LLM reprompts needed to generate a valid patch.</li>
-                <li><strong className="text-slate-800">MTTD (Mean Time to Detection):</strong> Average time to detect runtime failures for applied patches.</li>
-                <li><strong className="text-slate-800">Token Counts:</strong> Total LLM tokens used during the patch generation and evaluation phases.</li>
+              <ul className="space-y-3 list-none">
+                <li>
+                  <strong className="text-slate-800">Avg Repair Iterations:</strong>
+                  <div className="font-mono text-xs bg-slate-50 p-2 rounded border border-slate-100 my-1 text-slate-500">Iter_avg = (Σ LLM Prompts) / Total Bugs Repaired</div>
+                  Average number of LLM reprompts needed to generate a valid patch.
+                </li>
+                <li>
+                  <strong className="text-slate-800">MTTD (Mean Time to Detection):</strong>
+                  <div className="font-mono text-xs bg-slate-50 p-2 rounded border border-slate-100 my-1 text-slate-500">MTTD = (Σ Time to Failure) / Total Failures</div>
+                  Average time to detect runtime failures for applied patches.
+                </li>
+                <li>
+                  <strong className="text-slate-800">Token Counts:</strong>
+                  <div className="font-mono text-xs bg-slate-50 p-2 rounded border border-slate-100 my-1 text-slate-500">Tokens = Prompt Tokens + Completion Tokens</div>
+                  Total LLM tokens used during the patch generation and evaluation phases.
+                </li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-1"><Leaf className="w-4 h-4 text-teal-500"/> Sustainability Metrics</h4>
-              <ul className="space-y-2 list-disc pl-5">
-                <li><strong className="text-slate-800">Energy (kWh):</strong> Estimated energy consumption of LLM API calls based on token count and GPU thermal design power.</li>
-                <li><strong className="text-slate-800">Carbon (gCO₂):</strong> Derived from energy consumption using standard global grid emission factors.</li>
-                <li><strong className="text-slate-800">CO₂ Reduction:</strong> % decrease in carbon footprint compared to baseline models.</li>
+              <ul className="space-y-3 list-none">
+                <li>
+                  <strong className="text-slate-800">Energy (kWh):</strong>
+                  <div className="font-mono text-xs bg-slate-50 p-2 rounded border border-slate-100 my-1 text-slate-500">E = (Tokens * E_per_token) + (GPU_hr * P_gpu)</div>
+                  Estimated energy consumption of LLM API calls based on token count and GPU TDP.
+                </li>
+                <li>
+                  <strong className="text-slate-800">Carbon (gCO₂):</strong>
+                  <div className="font-mono text-xs bg-slate-50 p-2 rounded border border-slate-100 my-1 text-slate-500">C = E(kWh) * Carbon_Intensity(gCO₂/kWh)</div>
+                  Derived from energy consumption using standard global grid emission factors.
+                </li>
+                <li>
+                  <strong className="text-slate-800">CO₂ Reduction:</strong>
+                  <div className="font-mono text-xs bg-slate-50 p-2 rounded border border-slate-100 my-1 text-slate-500">Red(%) = ((C_base - C_trustops) / C_base) * 100</div>
+                  % decrease in carbon footprint compared to baseline models.
+                </li>
               </ul>
             </div>
           </div>
